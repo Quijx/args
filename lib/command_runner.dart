@@ -89,11 +89,11 @@ class CommandRunner<T> {
   final ArgParser _argParser;
 
   CommandRunner(
-      this.executableName,
-      this.description, {
-        bool addHelpFlag = true,
-        int? usageLineLength,
-      }) : _argParser = ArgParser(usageLineLength: usageLineLength) {
+    this.executableName,
+    this.description, {
+    bool addHelpFlag = true,
+    int? usageLineLength,
+  }) : _argParser = ArgParser(usageLineLength: usageLineLength) {
     if (addHelpFlag) {
       argParser.addFlag('help',
           abbr: 'h', negatable: false, help: 'Print this usage information.');
@@ -307,6 +307,9 @@ abstract class Command<T> {
   /// added to the end of [usage].
   String? get usageFooter => null;
 
+  String? get helpLine =>
+      'Run "${runner!.executableName} help" to see global options.';
+
   String _wrap(String text, {int? hangingIndent}) {
     return wrapText(text,
         length: argParser.usageLineLength, hangingIndent: hangingIndent);
@@ -330,9 +333,10 @@ abstract class Command<T> {
       ));
     }
 
-    buffer.writeln();
-    buffer.write(
-        _wrap('Run "${runner!.executableName} help" to see global options.'));
+    if (helpLine != null) {
+      buffer.writeln();
+      buffer.write(_wrap(helpLine));
+    }
 
     if (usageFooter != null) {
       buffer.writeln();
@@ -423,7 +427,7 @@ String _getCommandUsage(Map<String, Command> commands,
     {bool isSubcommand = false, int? lineLength}) {
   // Don't include aliases.
   var names =
-  commands.keys.where((name) => !commands[name]!.aliases.contains(name));
+      commands.keys.where((name) => !commands[name]!.aliases.contains(name));
 
   // Filter out hidden ones, unless they are all hidden.
   var visible = names.where((name) => !commands[name]!.hidden);

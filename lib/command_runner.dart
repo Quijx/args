@@ -335,7 +335,7 @@ abstract class Command<T> {
 
     if (helpLine != null) {
       buffer.writeln();
-      buffer.write(_wrap(helpLine));
+      buffer.write(_wrap(helpLine!));
     }
 
     if (usageFooter != null) {

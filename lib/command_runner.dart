@@ -47,18 +47,29 @@ class CommandRunner<T> {
   /// added to the end of [usage].
   String? get usageFooter => null;
 
+  String? get helpLine =>
+      'Run "$executableName help <command>" for more information about a command.';
+
+  String? get usageLine {
+    final usagePrefix = 'Usage:';
+    return '$usagePrefix ${_wrap(invocation, hangingIndent: usagePrefix.length)}\n';
+  }
+
   /// Returns [usage] with [description] removed from the beginning.
   String get _usageWithoutDescription {
-    var usagePrefix = 'Usage:';
     var buffer = StringBuffer();
-    buffer.writeln(
-        '$usagePrefix ${_wrap(invocation, hangingIndent: usagePrefix.length)}\n');
-    buffer.writeln(_wrap('Global options:'));
-    buffer.writeln('${argParser.usage}\n');
+    if (usageLine != null) {
+      buffer.writeln(usageLine);
+    }
+    if (argParser.options.isNotEmpty) {
+      buffer.writeln(_wrap('Global options:'));
+      buffer.writeln('${argParser.usage}\n');
+    }
     buffer.writeln(
         '${_getCommandUsage(_commands, lineLength: argParser.usageLineLength)}\n');
-    buffer.write(_wrap(
-        'Run "$executableName help <command>" for more information about a command.'));
+    if (helpLine != null) {
+      buffer.write(_wrap(helpLine!));
+    }
     if (usageFooter != null) {
       buffer.write('\n${_wrap(usageFooter!)}');
     }
@@ -77,10 +88,16 @@ class CommandRunner<T> {
   ArgParser get argParser => _argParser;
   final ArgParser _argParser;
 
-  CommandRunner(this.executableName, this.description, {int? usageLineLength})
-      : _argParser = ArgParser(usageLineLength: usageLineLength) {
-    argParser.addFlag('help',
-        abbr: 'h', negatable: false, help: 'Print this usage information.');
+  CommandRunner(
+      this.executableName,
+      this.description, {
+        bool addHelpFlag = true,
+        int? usageLineLength,
+      }) : _argParser = ArgParser(usageLineLength: usageLineLength) {
+    if (addHelpFlag) {
+      argParser.addFlag('help',
+          abbr: 'h', negatable: false, help: 'Print this usage information.');
+    }
     addCommand(HelpCommand<T>());
   }
 
@@ -182,7 +199,7 @@ class CommandRunner<T> {
       }
     }
 
-    if (topLevelResults['help']) {
+    if (topLevelResults.options.contains('help') && topLevelResults['help']) {
       command!.printUsage();
       return null;
     }
@@ -406,7 +423,7 @@ String _getCommandUsage(Map<String, Command> commands,
     {bool isSubcommand = false, int? lineLength}) {
   // Don't include aliases.
   var names =
-      commands.keys.where((name) => !commands[name]!.aliases.contains(name));
+  commands.keys.where((name) => !commands[name]!.aliases.contains(name));
 
   // Filter out hidden ones, unless they are all hidden.
   var visible = names.where((name) => !commands[name]!.hidden);

@@ -33,7 +33,9 @@ class CommandRunner<T> {
   ///
   /// Defaults to "$executableName <command> `arguments`". Subclasses can
   /// override this for a more specific template.
-  String get invocation => '$executableName <command> [arguments]';
+  String get invocation => executableName.isEmpty
+      ? '<command> [arguments]'
+      : '$executableName <command> [arguments]';
 
   /// Generates a string displaying usage information for the executable.
   ///
@@ -47,8 +49,9 @@ class CommandRunner<T> {
   /// added to the end of [usage].
   String? get usageFooter => null;
 
-  String? get helpLine =>
-      'Run "$executableName help <command>" for more information about a command.';
+  String? get helpLine => executableName.isEmpty
+      ? 'Run "help <command>" for more information about a command.'
+      : 'Run "$executableName help <command>" for more information about a command.';
 
   String? get usageLine {
     final usagePrefix = 'Usage:';
@@ -191,7 +194,11 @@ class CommandRunner<T> {
       command._globalResults = topLevelResults;
       command._argResults = argResults;
       commands = command._subcommands as Map<String, Command<T>>;
-      commandString += ' ${argResults.name}';
+      if (commandString.isEmpty) {
+        commandString = argResults.name.toString();
+      } else {
+        commandString += ' ${argResults.name}';
+      }
 
       if (argResults.options.contains('help') && argResults['help']) {
         command.printUsage();
@@ -245,7 +252,10 @@ abstract class Command<T> {
     for (var command = parent; command != null; command = command.parent) {
       parents.add(command.name);
     }
-    parents.add(runner!.executableName);
+    final executableName = runner!.executableName;
+    if (executableName.isNotEmpty) {
+      parents.add(executableName);
+    }
 
     var invocation = parents.reversed.join(' ');
     return _subcommands.isNotEmpty
@@ -307,8 +317,13 @@ abstract class Command<T> {
   /// added to the end of [usage].
   String? get usageFooter => null;
 
-  String? get helpLine =>
-      'Run "${runner!.executableName} help" to see global options.';
+  String? get helpLine {
+    final executableName = runner!.executableName;
+    if (executableName.isEmpty) {
+      return 'Run "help" for information about available commands.';
+    }
+    return 'Run "$executableName help" to see global options.';
+  }
 
   String _wrap(String text, {int? hangingIndent}) {
     return wrapText(text,

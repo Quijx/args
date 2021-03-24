@@ -12,11 +12,22 @@ class HelpCommand<T> extends Command<T> {
   final name = 'help';
 
   @override
-  String get description =>
-      'Display help information for ${runner!.executableName}.';
+  String get description {
+    final executableName = runner!.executableName;
+    if (executableName.isEmpty) {
+      return 'Display help information.';
+    }
+    return 'Display help information for $executableName.';
+  }
 
   @override
-  String get invocation => '${runner!.executableName} help [command]';
+  String get invocation {
+    final executableName = runner!.executableName;
+    if (executableName.isEmpty) {
+      return 'help [command]';
+    }
+    return '$executableName help [command]';
+  }
 
   @override
   bool get hidden => true;
@@ -52,7 +63,11 @@ class HelpCommand<T> extends Command<T> {
 
       command = commands[name];
       commands = command!.subcommands as Map<String, Command<T>>;
-      commandString += ' $name';
+      if (commandString.isEmpty) {
+        commandString = name;
+      } else {
+        commandString += ' $name';
+      }
     }
 
     command!.printUsage();
